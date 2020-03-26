@@ -93,6 +93,8 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	@Override
 	public void registerBeanDefinitions(Document doc, XmlReaderContext readerContext) {
 		this.readerContext = readerContext;
+
+		// 提取 root，开始注册
 		doRegisterBeanDefinitions(doc.getDocumentElement());
 	}
 
@@ -121,14 +123,26 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	protected void doRegisterBeanDefinitions(Element root) {
 		// Any nested <beans> elements will cause recursion in this method. In
 		// order to propagate and preserve <beans> default-* attributes correctly,
-		// keep track of the current (parent) delegate, which may be null. Create
-		// the new (child) delegate with a reference to the parent for fallback purposes,
+		// keep track of the current (parent) delegate, which may be null.
+		// 任何嵌套的 <beans> 元素都将导致此方法中的递归。
+		// 为了正确地传播和保留 <beans> default-* 属性，请跟踪当前（父）委托，该委托可能为空
+
+		// Create the new (child) delegate with a reference to the parent for fallback purposes,
 		// then ultimately reset this.delegate back to its original (parent) reference.
+		// 使用对父级的引用创建新的（子）委托以进行回退，然后最终将this.delegate重置回其原始（父）引用
+
 		// this behavior emulates a stack of delegates without actually necessitating one.
+		// 此行为模拟一个委托堆栈，而不实际需要一个委托。
+
+		// 记录之前 delegate
 		BeanDefinitionParserDelegate parent = this.delegate;
+
+		// 创建当前 delegate
 		this.delegate = createDelegate(getReaderContext(), root, parent);
 
+		// 用当前 delegate 判断 event 是否是默认的命名空间
 		if (this.delegate.isDefaultNamespace(root)) {
+
 			String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);
 			if (StringUtils.hasText(profileSpec)) {
 				String[] specifiedProfiles = StringUtils.tokenizeToStringArray(

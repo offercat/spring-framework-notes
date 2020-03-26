@@ -112,21 +112,34 @@ public class PluggableSchemaResolver implements EntityResolver {
 					"] and system id [" + systemId + "]");
 		}
 
+		// systemId 例子 ：http://www.springframework.org/schema/beans/spring-beans.xsd
+
+		// 如果 systemId 不为空，则执行解析
 		if (systemId != null) {
+			// 通过 systemId 获取 resourceLocation
 			String resourceLocation = getSchemaMappings().get(systemId);
+			// 如果没有获取到 resourceLocation 并且 systemId 是以 https: 开头
 			if (resourceLocation == null && systemId.startsWith("https:")) {
 				// Retrieve canonical http schema mapping even for https declaration
+
+				// 尝试一下使用 http 获取
 				resourceLocation = getSchemaMappings().get("http:" + systemId.substring(6));
 			}
+
+			// 如果拿到了资源的位置
 			if (resourceLocation != null) {
+				// 在指定的目录下读取 spring-beans.xsd
 				Resource resource = new ClassPathResource(resourceLocation, this.classLoader);
 				try {
+					// 将 spring-beans.xsd 转化成 SAX 输入源
 					InputSource source = new InputSource(resource.getInputStream());
+					// 为 SAX 输入源设置 publicId 和 systemId
 					source.setPublicId(publicId);
 					source.setSystemId(systemId);
 					if (logger.isTraceEnabled()) {
 						logger.trace("Found XML schema [" + systemId + "] in classpath: " + resourceLocation);
 					}
+					// 返回 SAX 输入源
 					return source;
 				}
 				catch (FileNotFoundException ex) {
@@ -143,9 +156,14 @@ public class PluggableSchemaResolver implements EntityResolver {
 
 	/**
 	 * Load the specified schema mappings lazily.
+	 *
+	 * 懒加载 schema 映射
 	 */
 	private Map<String, String> getSchemaMappings() {
+		// 先获取 schema 映射
 		Map<String, String> schemaMappings = this.schemaMappings;
+
+		// 双重判断加锁，单例模式
 		if (schemaMappings == null) {
 			synchronized (this) {
 				schemaMappings = this.schemaMappings;
@@ -154,12 +172,16 @@ public class PluggableSchemaResolver implements EntityResolver {
 						logger.trace("Loading schema mappings from [" + this.schemaMappingsLocation + "]");
 					}
 					try {
+						// 通过 schemaMappingsLocation 获取所有的 schema 配置
+						// schemaMappingsLocation 默认为 "META-INF/spring.schemas"
 						Properties mappings =
 								PropertiesLoaderUtils.loadAllProperties(this.schemaMappingsLocation, this.classLoader);
 						if (logger.isTraceEnabled()) {
 							logger.trace("Loaded schema mappings: " + mappings);
 						}
+						// 新建 ConcurrentHashMap
 						schemaMappings = new ConcurrentHashMap<>(mappings.size());
+						// 将获取到的 schema 配置复制到 Map 中
 						CollectionUtils.mergePropertiesIntoMap(mappings, schemaMappings);
 						this.schemaMappings = schemaMappings;
 					}

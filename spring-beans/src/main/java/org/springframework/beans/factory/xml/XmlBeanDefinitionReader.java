@@ -262,20 +262,29 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * Return the EntityResolver to use, building a default resolver
 	 * if none specified.
 	 * 返回一个实体解析器，如果没有指定就返回一个默认的
+	 *
+	 * EntityResolver 的作用是项目本身就可以提供一个寻找 DTD 声明的方法，即由程序来实现寻找 DTD 声明的过程，
+	 * 比如我们将 DTD 文件放在项目某处，在实现时直接将此文档读取并返回给 SAX 即可。
+	 *
+	 * EntityResolver 的 resolveEntity 方法返回了 spring-beans.xsd / .dtd 的SAX输入源对象
+	 *
+	 * Spring 对 EntityResolver 的实现，主要是避免了通过网络来寻找相应的声明
 	 */
 	protected EntityResolver getEntityResolver() {
 		// 如果实体解析器为空
 		if (this.entityResolver == null) {
 			// Determine default EntityResolver to use.
 			ResourceLoader resourceLoader = getResourceLoader();
+			// 如果自定义了 resourceLoader，则用自定义的 resourceLoader 新建资源实体解析器 EntityResolver
 			if (resourceLoader != null) {
 				this.entityResolver = new ResourceEntityResolver(resourceLoader);
 			}
+			// 如果没有定义 resourceLoader，则新建授权实体解析器 DelegatingEntityResolver
 			else {
 				this.entityResolver = new DelegatingEntityResolver(getBeanClassLoader());
 			}
 		}
-		// 如果实体解析器不为空，直接返回即可
+		// 返回解析器
 		return this.entityResolver;
 	}
 
@@ -435,7 +444,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 			// 将SAX输入源转化为 Document 文件
 			Document doc = doLoadDocument(inputSource, resource);
 
-			// 用 Document 注册 bean
+			// 开始将 Document 解析成 bean
 			int count = registerBeanDefinitions(doc, resource);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Loaded " + count + " bean definitions from " + resource);
@@ -491,7 +500,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 				this.errorHandler,
 				// XML文件的验证模式
 				getValidationModeForResource(resource),
-				//
+				// 是否对XML命名空间的支持
 				isNamespaceAware()
 		);
 	}
@@ -581,8 +590,12 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 
 	/**
 	 * Register the bean definitions contained in the given DOM document.
+	 * 注册给定DOM文档中包含的bean定义。
+	 *
 	 * Called by {@code loadBeanDefinitions}.
 	 * <p>Creates a new instance of the parser class and invokes
+	 * <p>创建一个解析类的实例并调用
+	 *
 	 * {@code registerBeanDefinitions} on it.
 	 * @param doc the DOM document
 	 * @param resource the resource descriptor (for context information)
@@ -593,15 +606,23 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see BeanDefinitionDocumentReader#registerBeanDefinitions
 	 */
 	public int registerBeanDefinitions(Document doc, Resource resource) throws BeanDefinitionStoreException {
+		// 使用反射创建默认的 bean 定义读取器
 		BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();
+		// 获取 xml 工厂里已经定义的 bean 数量
 		int countBefore = getRegistry().getBeanDefinitionCount();
+		// 使用 BeanDefinitionDocumentReader 注册 bean
 		documentReader.registerBeanDefinitions(doc, createReaderContext(resource));
+		// 最后用先后的 bean 数量相减，得到并返回本次注册的 bean 数量
 		return getRegistry().getBeanDefinitionCount() - countBefore;
 	}
 
 	/**
 	 * Create the {@link BeanDefinitionDocumentReader} to use for actually
+	 * 创建一个实际可用的 BeanDefinitionDocumentReader
+	 *
 	 * reading bean definitions from an XML document.
+	 * 从 XML 文件中读取 bean 定义
+	 *
 	 * <p>The default implementation instantiates the specified "documentReaderClass".
 	 * @see #setDocumentReaderClass
 	 */
@@ -611,6 +632,8 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 
 	/**
 	 * Create the {@link XmlReaderContext} to pass over to the document reader.
+	 *
+	 * 创建 xml 读取器上下文，传递给文件读取器
 	 */
 	public XmlReaderContext createReaderContext(Resource resource) {
 		return new XmlReaderContext(resource, this.problemReporter, this.eventListener,

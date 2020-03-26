@@ -59,22 +59,33 @@ public class BeansDtdResolver implements EntityResolver {
 					"] and system ID [" + systemId + "]");
 		}
 
+		// systemId 例子 ：http://www.springframework.org/schema/beans/spring-beans.xsd
+
+		// systemId 不为空并且以 .dtd 结尾，则开始解析
 		if (systemId != null && systemId.endsWith(DTD_EXTENSION)) {
+			// 获取最后一个 / 的下标
 			int lastPathSeparator = systemId.lastIndexOf('/');
+			// 找到最后一个 / 开始的，第一个 "spring-beans" 的位置
 			int dtdNameStart = systemId.indexOf(DTD_NAME, lastPathSeparator);
+			// 如果找到，继续解析
 			if (dtdNameStart != -1) {
+				// 拼接出文件全名：spring-beans.xsd
 				String dtdFile = DTD_NAME + DTD_EXTENSION;
 				if (logger.isTraceEnabled()) {
 					logger.trace("Trying to locate [" + dtdFile + "] in Spring jar on classpath");
 				}
 				try {
+					// 获取当前目录下的 spring-beans.dtd 文件
 					Resource resource = new ClassPathResource(dtdFile, getClass());
+					// 转化为 SAX 输入源
 					InputSource source = new InputSource(resource.getInputStream());
+					// 为 SAX 输入源设置 publicId 和 systemId
 					source.setPublicId(publicId);
 					source.setSystemId(systemId);
 					if (logger.isTraceEnabled()) {
 						logger.trace("Found beans DTD [" + systemId + "] in classpath: " + dtdFile);
 					}
+					// 最后返回 SAX 输入源
 					return source;
 				}
 				catch (FileNotFoundException ex) {

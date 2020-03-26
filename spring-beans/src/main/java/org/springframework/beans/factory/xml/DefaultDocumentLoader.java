@@ -32,12 +32,19 @@ import org.springframework.util.xml.XmlValidationModeDetector;
 
 /**
  * Spring's default {@link DocumentLoader} implementation.
+ * spring Document 加载器的默认实现（这个类使用了jdk的方法来解析文件，并没有什么特别的地方）
  *
  * <p>Simply loads {@link Document documents} using the standard JAXP-configured
+ * 使用标准的 JAXP 加载 document
+ *
  * XML parser. If you want to change the {@link DocumentBuilder} that is used to
  * load documents, then one strategy is to define a corresponding Java system property
- * when starting your JVM. For example, to use the Oracle {@link DocumentBuilder},
+ * when starting your JVM.
+ * XML解析器。如果你想要改变用于加载文档的 DocumentBuilder，一中策略实在启动JVM是定义相应的java参数（传递JVM参数）
+ *
+ * For example, to use the Oracle {@link DocumentBuilder},
  * you might start your application like as follows:
+ * 例如，你想要使用 Oracle 的文件加载器，你可以像下面这样启动你的应用
  *
  * <pre code="class">java -Djavax.xml.parsers.DocumentBuilderFactory=oracle.xml.jaxp.JXDocumentBuilderFactory MyMainClass</pre>
  *
@@ -69,11 +76,14 @@ public class DefaultDocumentLoader implements DocumentLoader {
 	public Document loadDocument(InputSource inputSource, EntityResolver entityResolver,
 			ErrorHandler errorHandler, int validationMode, boolean namespaceAware) throws Exception {
 
+		// 创建 DocumentBuilderFactory，可通过JVM参数再启动时自定义
 		DocumentBuilderFactory factory = createDocumentBuilderFactory(validationMode, namespaceAware);
 		if (logger.isTraceEnabled()) {
 			logger.trace("Using JAXP provider [" + factory.getClass().getName() + "]");
 		}
+		// 通过 DocumentBuilderFactory 创建 DocumentBuilder
 		DocumentBuilder builder = createDocumentBuilder(factory, entityResolver, errorHandler);
+		// 使用 DocumentBuilder 解析 SAX 输入源
 		return builder.parse(inputSource);
 	}
 
