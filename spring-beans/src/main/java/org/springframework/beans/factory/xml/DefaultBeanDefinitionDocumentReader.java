@@ -44,11 +44,16 @@ import org.springframework.util.StringUtils;
  * reads bean definitions according to the "spring-beans" DTD and XSD format
  * (Spring's default XML bean definition format).
  *
+ * {@link BeanDefinitionDocumentReader} 接口的默认实现，用它来根据 "spring-beans" 的 DTD 和 XSD 格式读取 bean
+ *
  * <p>The structure, elements, and attribute names of the required XML document
  * are hard-coded in this class. (Of course a transform could be run if necessary
  * to produce this format). {@code <beans>} does not need to be the root
  * element of the XML document: this class will parse all bean definition elements
  * in the XML file, regardless of the actual root element.
+ *
+ * 所需XML文档的结构、元素和属性名在此类中硬编码。（当然，如果需要生成这种格式，可以运行转换）。
+ * <beans> 不需要是XML文档的根元素：这个类将解析XML文件中的所有bean定义元素，而不管实际的根元素是什么。
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -142,8 +147,9 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 
 		// 用当前 delegate 判断 event 是否是默认的命名空间
 		if (this.delegate.isDefaultNamespace(root)) {
-
+			// 处理profile属性
 			String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);
+			// 当profile有内容时才进行解析
 			if (StringUtils.hasText(profileSpec)) {
 				String[] specifiedProfiles = StringUtils.tokenizeToStringArray(
 						profileSpec, BeanDefinitionParserDelegate.MULTI_VALUE_ATTRIBUTE_DELIMITERS);
@@ -159,8 +165,12 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 			}
 		}
 
+		// 模板模式
+		// 解析前处理
 		preProcessXml(root);
+		// 解析根元素
 		parseBeanDefinitions(root, this.delegate);
+		// 解析后处理
 		postProcessXml(root);
 
 		this.delegate = parent;
@@ -175,11 +185,15 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	}
 
 	/**
+	 * 解析在 document 中的 "import", "alias", "bean" 等根元素
+	 *
 	 * Parse the elements at the root level in the document:
 	 * "import", "alias", "bean".
-	 * @param root the DOM root element of the document
+	 * @param root the DOM root element of the document -> document的根元素
 	 */
 	protected void parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) {
+		// 对 beans 的处理
+		// 解析默认的命名空间
 		if (delegate.isDefaultNamespace(root)) {
 			NodeList nl = root.getChildNodes();
 			for (int i = 0; i < nl.getLength(); i++) {
@@ -187,33 +201,40 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				if (node instanceof Element) {
 					Element ele = (Element) node;
 					if (delegate.isDefaultNamespace(ele)) {
+						// 对bean的处理，解析默认的元素
 						parseDefaultElement(ele, delegate);
 					}
 					else {
+						// 对bean的处理，解析自定义的元素
 						delegate.parseCustomElement(ele);
 					}
 				}
 			}
 		}
+		// 解析自定义的命名空间
 		else {
 			delegate.parseCustomElement(root);
 		}
 	}
 
 	private void parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate) {
+		// 解析 import 元素
 		if (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) {
 			importBeanDefinitionResource(ele);
 		}
+		// 解析 alias 元素
 		else if (delegate.nodeNameEquals(ele, ALIAS_ELEMENT)) {
 			processAliasRegistration(ele);
 		}
+		// 解析 bean 元素
 		else if (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) {
 			processBeanDefinition(ele, delegate);
 		}
 		else if (delegate.nodeNameEquals(ele, NESTED_BEANS_ELEMENT)) {
-			// recurse
+			// 如果有内嵌的 beans 集合，回调 doRegisterBeanDefinitions 方法，再次分解解析
 			doRegisterBeanDefinitions(ele);
 		}
+		// 如果不是 "import", "alias", "bean"，"beans" 默认元素，将被直接抛弃
 	}
 
 	/**

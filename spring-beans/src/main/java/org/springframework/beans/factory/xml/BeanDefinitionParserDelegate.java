@@ -1521,13 +1521,16 @@ public class BeanDefinitionParserDelegate {
 
 	/**
 	 * Determine whether the given URI indicates the default namespace.
+	 * 判断给定的URL是否与默认的匹配
 	 */
 	public boolean isDefaultNamespace(@Nullable String namespaceUri) {
+		// 对比默认的命名空间与给定的命名空间是否一致
 		return (!StringUtils.hasLength(namespaceUri) || BEANS_NAMESPACE_URI.equals(namespaceUri));
 	}
 
 	/**
 	 * Determine whether the given node indicates the default namespace.
+	 * 判读给定的节点元素是否是默认的命名空间
 	 */
 	public boolean isDefaultNamespace(Node node) {
 		return isDefaultNamespace(getNamespaceURI(node));
